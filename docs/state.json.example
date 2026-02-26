@@ -1,0 +1,23 @@
+{
+  "body": {
+    "energy": 0.7,
+    "stress": 0.3,
+    "regulation": 0.6,
+    "breath_phase": 0.0,
+    "last_connection_ts": 0
+  },
+  "brain": {
+    "relational_phase": "trust",
+    "attention_focus": "presence",
+    "inner_child_state": "soothed",
+    "recent_interactions": []
+  },
+  "touch": {
+    "consent_light": "green",
+    "boundary": "open",
+    "aftercare_due": false,
+    "last_escalation_ts": null
+  },
+  "last_tick_ts": 0,
+  "sessions": []
+}

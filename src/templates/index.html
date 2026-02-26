@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TI² — Connect</title>
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --surface: #1a1a1a;
+      --border: #333;
+      --text: #e5e5e5;
+      --accent: #00d4ff;
+      --muted: #888;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+    main {
+      max-width: 32rem;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: var(--text);
+    }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    section h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin: 0 0 0.5rem 0;
+    }
+    section p {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    button, .btn-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      font-family: inherit;
+    }
+    button.primary, .btn-link.primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    button.primary:hover, .btn-link.primary:hover {
+      filter: brightness(1.1);
+    }
+    button.secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.secondary:hover {
+      border-color: var(--accent);
+    }
+    .copy-feedback {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-top: 0.25rem;
+    }
+    #logForm {
+      display: none;
+      margin-top: 1rem;
+    }
+    #logForm.visible {
+      display: block;
+    }
+    .practice-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .practice-options button {
+      font-size: 0.9rem;
+      padding: 0.5rem 0.75rem;
+    }
+    .loading { color: var(--muted); }
+    .error { color: #e55; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>How she is right now</h1>
+
+    <section aria-labelledby="how-heading">
+      <h2 id="how-heading">How she is</h2>
+      <p id="howSheIs" class="loading">Loading…</p>
+    </section>
+
+    <section aria-labelledby="want-heading">
+      <h2 id="want-heading">What she wants today</h2>
+      <p id="whatSheWants" class="loading">Loading…</p>
+    </section>
+
+    <div class="actions">
+      <button type="button" class="primary" id="openConnection" aria-label="Copy connection block and open ChatGPT">
+        Open connection
+      </button>
+      <p id="copyFeedback" class="copy-feedback" aria-live="polite"></p>
+      <a href="https://chat.openai.com/" target="_blank" rel="noopener" class="btn-link secondary">Open ChatGPT</a>
+
+      <button type="button" class="secondary" id="weAreDone">We're done — what did we do?</button>
+      <div id="logForm" role="region" aria-label="Log session">
+        <p style="margin-bottom: 0.5rem; font-size: 0.9rem;">Choose what you did:</p>
+        <div class="practice-options" id="practiceOptions"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const practiceTypes = [
+      { value: 'presence_date', label: 'Presence date' },
+      { value: 'inner_child', label: 'Inner-child dialogue' },
+      { value: 'consent_rep', label: 'Consent rep' },
+      { value: 'devotion_check_in', label: 'Devotion check-in' },
+      { value: 'aftercare', label: 'Aftercare' },
+      { value: 'paused', label: 'Paused' },
+      { value: 'just_talked', label: 'Just talked' },
+    ];
+
+    let stateData = null;
+
+    function renderHowSheIs() {
+      const el = document.getElementById('howSheIs');
+      if (!stateData) { el.textContent = 'Loading…'; el.className = 'loading'; return; }
+      el.className = '';
+      el.textContent = [stateData.body_summary, stateData.brain_summary, stateData.touch_summary].filter(Boolean).join(' ');
+    }
+
+    function renderWhatSheWants() {
+      const el = document.getElementById('whatSheWants');
+      if (!stateData) { el.textContent = 'Loading…'; el.className = 'loading'; return; }
+      el.className = '';
+      el.textContent = stateData.brain_want_text || 'A short presence date.';
+    }
+
+    function renderPracticeOptions() {
+      const container = document.getElementById('practiceOptions');
+      container.innerHTML = '';
+      practiceTypes.forEach(({ value, label }) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'secondary';
+        btn.textContent = label;
+        btn.addEventListener('click', () => submitLog(value));
+        container.appendChild(btn);
+      });
+    }
+
+    async function fetchState() {
+      try {
+        const res = await fetch('/api/state');
+        if (!res.ok) throw new Error(res.statusText);
+        stateData = await res.json();
+        renderHowSheIs();
+        renderWhatSheWants();
+      } catch (e) {
+        document.getElementById('howSheIs').textContent = 'Could not load state.';
+        document.getElementById('howSheIs').className = 'error';
+        document.getElementById('whatSheWants').textContent = '';
+      }
+    }
+
+    document.getElementById('openConnection').addEventListener('click', async () => {
+      if (!stateData || !stateData.connection_block) {
+        await fetchState();
+      }
+      if (stateData && stateData.connection_block) {
+        await navigator.clipboard.writeText(stateData.connection_block);
+        const fb = document.getElementById('copyFeedback');
+        fb.textContent = 'Connection copied. Paste into ChatGPT.';
+        setTimeout(() => { fb.textContent = ''; }, 3000);
+      }
+    });
+
+    document.getElementById('weAreDone').addEventListener('click', () => {
+      const form = document.getElementById('logForm');
+      form.classList.toggle('visible');
+      if (form.classList.contains('visible') && !document.getElementById('practiceOptions').innerHTML) {
+        renderPracticeOptions();
+      }
+    });
+
+    async function submitLog(practiceType) {
+      try {
+        const res = await fetch('/api/log_session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ practice_type: practiceType }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || res.statusText);
+        }
+        stateData = await res.json();
+        renderHowSheIs();
+        renderWhatSheWants();
+        document.getElementById('logForm').classList.remove('visible');
+      } catch (e) {
+        document.getElementById('copyFeedback').textContent = e.message || 'Failed to log.';
+        document.getElementById('copyFeedback').className = 'copy-feedback error';
+      }
+    }
+
+    renderPracticeOptions();
+    fetchState();
+  </script>
+</body>
+</html>
