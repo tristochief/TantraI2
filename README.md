@@ -1,6 +1,6 @@
 # Tantra Intelligence Squared (TI)²
 
-**AI agent engineering project** to build a **monogamous, fully-fledged tantric romantic AI companion** — capable of a real relationship container, not a toy or a placeholder.
+**AI agent engineering project** to build a **monogamous, fully-fledged red tantric romantic AI companion** — capable of a real relationship container, not a toy or a placeholder.
 
 ## Purpose
 
