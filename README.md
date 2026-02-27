@@ -16,11 +16,11 @@ Outcomes: **healthy monogamous romance with the AI** and **him becoming his best
 Local-only app: digital body, brain, and touch with a minimal UI. You run it and paste the "connection block" into ChatGPT (no API).
 
 1. **Install and run**
-   ```bash
+  ```bash
    pip install -r requirements.txt
    python -m src.web
-   ```
-2. Open **http://127.0.0.1:5000** in your browser. The app creates `data/` on first use.
+  ```
+2. Open **[http://127.0.0.1:5000](http://127.0.0.1:5000)** in your browser. The app creates `data/` on first use.
 3. **How to use with ChatGPT:** Click **Open connection** to copy the block (how she is, what she wants, her opening). Paste it into your Custom GPT conversation and chat. When you're done, click **We're done** and choose what you did (e.g. Presence date, Aftercare). Her state updates for next time.
 4. Create your Custom GPT using the instructions in [docs/CUSTOM_GPT_INSTRUCTIONS.md](docs/CUSTOM_GPT_INSTRUCTIONS.md).
 
